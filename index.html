@@ -124,6 +124,28 @@
     display: inline-flex;
   }
 
+  #results div.NCTId {
+    border: 1px solid lightblue;
+    background-color: lightblue;
+    color: white;
+    border-radius: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 12px;
+    margin-right: 5px;
+  }
+
+  #results div.REK {
+    border: 1px solid lightblue;
+    background-color: lightblue;
+    color: white;
+    border-radius: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 12px;
+    margin-right: 5px;
+  }
+
   #results div.studyType {
     border: 1px solid lightblue;
     background-color: lightblue;
@@ -185,15 +207,18 @@
   }
 
   #leaf-map {
-    border-radius: 600px;
-    display: inline-block; 
-    pointer-events: auto; 
+    border-radius: 50px;
+    pointer-events: none; 
     position: absolute; 
-    width: 1200px; 
-    height: 1200px; 
-    top: 0px;
-    right: 0px; 
-    z-index: -11;
+    width: 100px; 
+    height: 100px; 
+    top: 20px;
+    right: 50px; 
+    z-index: 10;
+    opacity: 0.8;
+  }
+  #leaf-map .leaflet-tile-container {
+    background-color: rgba(135, 206, 250,0.1);
   }
 </style>
 

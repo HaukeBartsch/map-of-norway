@@ -172,6 +172,13 @@ function sampleClick(name) {
   });
 }
 
+function moveMap(lat, lon) {
+  k = k_zoomed;
+  g.transition()
+    .duration(750)
+    .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')scale(' + k + ')translate(' + -x + ',' + -y + ')');
+}
+
 // When clicked, zoom in
 function clicked(d) {
   var x, y, k;
@@ -426,24 +433,24 @@ function search() {
     }
     
     var idModule = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"];
+    var REK = idModule['OrgStudyIdInfo']['OrgStudyId'];
+
     txt += "<div class=\"result-row\"><div class=\"results-title\">" + idModule["BriefTitle"] + "</div></br><div class=\"results-organization\">" + idModule["Organization"]["OrgFullName"] + "</div><div class=\"results-reference\">" 
     + ref + "</div><div class=\"sponsor\">" + sponsor + "</div><div class=\"collaborator\">" 
     + collaborators + "</div><div class=\"labels\"><div class=\"numPart\" title=\"Number of participants the study accepts.\">" 
-    + participants + "</div><div class=\"studyType\" title=\"Type of the study.\">" 
-    + StudyType + "</div></div><div class=\"eligibility\">" + Eligibility + "</div></div><hr>";
+    + participants + "</div><div class=\"studyType\" title=\"Type of the study.\">" + StudyType + "</div><div class=\"NCTId\">" 
+    + idModule['NCTId'] + "</div><div class=\"REK\">" + REK + "</div></div><div class=\"eligibility\">" + Eligibility + "</div></div><hr>";
   }
   jQuery('#results').html(txt);
   jQuery('#results').removeClass('hide');
   //console.log("result is: " + JSON.stringify(data));
 });
-//ev.preventDefault();
-//return false;
 }
 
 var map = null;
 //var mtLayer = null;
 function setupMap(location, zoom) {
-  return;
+  // return;
   if (typeof location === "string") {
     // do a geocoding lookup
     jQuery.getJSON("https://nominatim.openstreetmap.org/search", { q: location, format: "json"}, function(data) {
@@ -454,6 +461,7 @@ function setupMap(location, zoom) {
       }
       jQuery('#leaf-map').fadeIn();
       setupMap([ data[0].lat, data[0].lon ], zoom);
+      //moveMap(data[0].lat, data[0].lon);
     });
     return;
   }
@@ -523,4 +531,46 @@ jQuery(document).ready(function() {
     search(txt);
     setupMap(txt, 14);
   });
+
+  jQuery('#actions a').on('click', function(ev) {
+    // download current query as csv
+    var csvContent = "NCT-Id,title,sponsor,REK\n";
+    jQuery('#results div.result-row').each(function(i, a) {
+      var title = jQuery(a).find('div.results-title').text();
+      var sponsor = jQuery(a).find('div.sponsor').text();
+      var REK = jQuery(a).find('div.REK').text();
+      var NCTId = jQuery(a).find('div.NCTId').text();
+      csvContent += NCTId.replaceAll(",","") + "," +
+                  title.replaceAll(",", ";").replaceAll("\n","") + "," +
+                  sponsor.replace("sponsor: ", "").replaceAll(",", ";").replaceAll("\n","") + "," +
+                  REK.replaceAll(",","") + "\n";
+    }); 
+    // var encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv' }); 
+    // Creating an object for downloading url 
+    const url = window.URL.createObjectURL(blob) 
+    var link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "map-of-norway-search-results.csv");
+    document.body.appendChild(link); // Required for FF
+
+    link.click();
+    document.body.removeChild(link);
+    ev.preventDefault();
+  });
+
+  // do something at the beginning
+  jQuery('#inputSearch').val("");
+  setTimeout(function() {
+    "Oslo".split("").forEach(function(a, i, ar) { 
+      setTimeout(function() { 
+        jQuery('#inputSearch').val(jQuery('#inputSearch').val() + a);
+        if (i == ar.length-1)
+          jQuery('#search-button').click();
+      }, i*100); 
+    });
+
+    //jQuery('#inputSearch').val("Bergen");
+    //jQuery('#search-button').click();
+  }, 1000);
 });
