@@ -10,7 +10,7 @@ var center_coord = [13.174043, 65.8368];
 var init_zoom = 1400;
 var k_zoomed = 4;
 // good places to look for stuff
-var places = [ "Oslo", "Bergen", "Stavanger", "stroke Norway"];
+var places = [ "Oslo", "Bergen", "Stavanger", "Trondheim", "Tromsø", "stroke Norway"];
 
 
 function nameFn(d) {
@@ -233,24 +233,17 @@ function mouseover(d) {
     // disable the map layer and enable the fylker layer
     mapLayer.selectAll('path').style('pointer-events', 'none');
     effectLayer.selectAll('path').style('pointer-events', 'auto');
-    var items = document.elementsFromPoint(x, y); 
+    var items = document.elementsFromPoint(x, y); // this only works if we have the correct pointer-events setting
     // undo again
     mapLayer.selectAll('path').style('pointer-events', 'auto');
     effectLayer.selectAll('path').style('pointer-events', 'none');
     items.forEach(function (a, b) { 
       if (a.tagName == "path" && jQuery(a).hasClass('fylker')) {
-        console.log("found a path");
+        //console.log("found a path");
         // set the color now
         jQuery(a).addClass('highlighted');
       }
     });
-
-    //in this case is tagName == "ellipse" but you can find something else in commun, like a class - for example.
-    /*while (item && item.tagName == "path") {
-      item.classList.add("hover")
-      item.style.pointerEvents = "none";
-      item = document.elementFromPoint(x, y);
-    }*/
   }
   getAllElementsFromPoint(x, y);
   
@@ -262,6 +255,8 @@ function mouseout(d) {
   // Reset province color
   mapLayer.selectAll('path')
   .style('fill', function (d) { return centered && d === centered ? '#D5708B' : fillFn(d); });
+  // remove all highlights
+  jQuery('svg path.fylker').each(function(b,a) { jQuery(a).removeClass('highlighted'); });
   
   // Remove effect text
   //  effectLayer.selectAll('path').transition()
