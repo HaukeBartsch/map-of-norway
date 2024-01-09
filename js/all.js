@@ -101,18 +101,20 @@ d3.json(fname_fylker).then(function (mapData) {
   color.domain([0, d3.max(features1, nameLength)]);
   
   // Draw each province as a path
-  effectLayer.selectAll('path')
+  effectLayer.selectAll('path.fylker')
   .data(features1)
   .enter().append('path')
+  .attr('class', 'fylker')
   .attr('d', path)
   .attr('stroke-width', 1.5)
   .attr('type', 'fylkes')
   //.attr('stroke-opacity', 0.1)
   .attr('vector-effect', 'non-scaling-stroke')
-  .style('fill', fillFn)
-  .style('opacity', 1)
-  .on('mouseover2', mouseover)
-  .on('mouseout2', mouseout)
+  .attr('pointer-events', 'none')
+  //.style('fill', fillFn)
+  .style('opacity', 0.6);
+  //.on('mouseover', mouseover2)
+  //.on('mouseout', mouseout2);
   //.on('click', clicked);
   
   // load the kommuner data after the fylker data  
@@ -126,9 +128,10 @@ d3.json(fname).then(function (mapData) {
   color.domain([0, d3.max(features2, nameLength)]);
   
   // Draw each province as a path
-  mapLayer.selectAll('path')
+  mapLayer.selectAll('path.kommuner')
   .data(features2)
   .enter().append('path')
+  .attr('class', 'kommuner')
   .attr('d', path)
   .attr('stroke-width', 1.5)
   .attr('stroke-opacity', 0.8)
@@ -138,7 +141,7 @@ d3.json(fname).then(function (mapData) {
     return d.properties.navn;
   })
   .style('fill', fillFn)
-  .style('opacity', 0.5)
+  .style('opacity', 0.3)
   .on('mouseover', mouseover)
   .on('mouseout', mouseout)
   .on('click', clicked);
@@ -211,28 +214,45 @@ function clicked(d) {
   textArt(nameFn(d), numFn(d), "RegionNameHighlighted"); 
 }
 
-function mouseover2(d) {
+/*function mouseover2(d) {
   d3.select(this).style('fill', 'orange');
 }
 function mouseout2(d) {
   effectLayer.selectAll('path')
   .style('fill', function (d) { return centered && d === centered ? '#D5708B' : fillFn(d); });  
-}
+} */
 
-function mouseover(d, ev) {
+function mouseover(d) {
   // Highlight hovered province
   d3.select(this).style('fill', 'orange');
-  
-  function getAllElementsFromPoint(rootEl, x, y) { 
-    var item = document.elementFromPoint(x, y); 
+  var x = d3.event.pageX;
+  var y = d3.event.pageY;
+  function getAllElementsFromPoint(x, y) { 
+    // remove all highlights
+    jQuery('svg path.fylker').each(function(b,a) { jQuery(a).removeClass('highlighted'); });
+    // disable the map layer and enable the fylker layer
+    mapLayer.selectAll('path').style('pointer-events', 'none');
+    effectLayer.selectAll('path').style('pointer-events', 'auto');
+    var items = document.elementsFromPoint(x, y); 
+    // undo again
+    mapLayer.selectAll('path').style('pointer-events', 'auto');
+    effectLayer.selectAll('path').style('pointer-events', 'none');
+    items.forEach(function (a, b) { 
+      if (a.tagName == "path" && jQuery(a).hasClass('fylker')) {
+        console.log("found a path");
+        // set the color now
+        jQuery(a).addClass('highlighted');
+      }
+    });
+
     //in this case is tagName == "ellipse" but you can find something else in commun, like a class - for example.
-    while (item && item.tagName == "ellipse") {
+    /*while (item && item.tagName == "path") {
       item.classList.add("hover")
       item.style.pointerEvents = "none";
       item = document.elementFromPoint(x, y);
-    }
+    }*/
   }
-  //getAllElementsFromPoint(effectLayer, ev.clientX, ev.clientY);
+  getAllElementsFromPoint(x, y);
   
   // Draw effects
   textArt(nameFn(d), numFn(d));
@@ -419,18 +439,70 @@ function search() {
   }
   jQuery('#results').html(txt);
   jQuery('#results').removeClass('hide');
-  console.log("result is: " + JSON.stringify(data));
+  //console.log("result is: " + JSON.stringify(data));
 });
 //ev.preventDefault();
 //return false;
 }
 
+var map = null;
+//var mtLayer = null;
+function setupMap(location, zoom) {
+  return;
+  if (typeof location === "string") {
+    // do a geocoding lookup
+    jQuery.getJSON("https://nominatim.openstreetmap.org/search", { q: location, format: "json"}, function(data) {
+      if (data.length == 0) {
+        // make map invisible again
+        jQuery('#leaf-map').fadeOut();
+        return;    
+      }
+      jQuery('#leaf-map').fadeIn();
+      setupMap([ data[0].lat, data[0].lon ], zoom);
+    });
+    return;
+  }
+
+  if (map == null) {
+    // style = L.MaptilerStyle.DATAVIZ.LIGHT;
+    map = L.map('leaf-map', { zoomControl: false, attributionControl: false}).setView([location[0], location[1]], zoom);
+    //mtLayer = L.maptilerLayer({
+    //  apiKey: key,
+    //  style: L.MaptilerStyle.STREETS, // optional
+    //}).addTo(map);
+    //mtLayer.setStyle(style);
+    // more styles from: http://leaflet-extras.github.io/leaflet-providers/preview/
+    //var styledMap = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
+    //var styledMap = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+    var styledMap = "http://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web_grau/default/WEBMERCATOR/{z}/{y}/{x}.png";
+    L.tileLayer(styledMap, {
+      maxZoom: 19,
+      attribution: ''
+    }).addTo(map);
+  } else {
+    map.setView([location[0], location[1]], zoom);
+  }
+}
+
+
 jQuery(document).ready(function() {
-  jQuery('#search-button').on('click', search);
+  jQuery('#search-button').on('click', function() {
+    var name = jQuery('#inputSearch').val();
+    jQuery('#inputSearch').val(name);
+    jQuery('#inputSearch').trigger('change');
+    sampleClick(name);
+    search(name);
+    setupMap(name, 14);
+  });
   jQuery('#inputSearch').on('keyup', function(e) {
     var key = e.which;
     if(key == 13) {
-      search();
+      var name = jQuery('#inputSearch').val();
+      jQuery('#inputSearch').val(name);
+      jQuery('#inputSearch').trigger('change');
+      sampleClick(name);
+      search(name);
+      setupMap(name, 14);
     }
   });
   
@@ -445,13 +517,15 @@ jQuery(document).ready(function() {
     jQuery('#inputSearch').trigger('change');
     sampleClick(name);
     search(name);
+    setupMap(name, 14);
   });
 
   jQuery('#results').on('click', 'div.results-organization', function() {
     var txt = jQuery(this).text();
     jQuery('#inputSearch').val(txt);
     jQuery('#inputSearch').trigger('change');
-    sampleClick(name);
-    search(name);
+    sampleClick(txt);
+    search(txt);
+    setupMap(txt, 14);
   });
 });
