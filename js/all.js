@@ -438,8 +438,8 @@ function search() {
     txt += "<div class=\"result-row\"><div class=\"results-title\">" + idModule["BriefTitle"] + "</div></br><div class=\"results-organization\">" + idModule["Organization"]["OrgFullName"] + "</div><div class=\"results-reference\">" 
     + ref + "</div><div class=\"sponsor\">" + sponsor + "</div><div class=\"collaborator\">" 
     + collaborators + "</div><div class=\"labels\"><div class=\"numPart\" title=\"Number of participants the study accepts.\">" 
-    + participants + "</div><div class=\"studyType\" title=\"Type of the study.\">" + StudyType + "</div><div class=\"NCTId\">" 
-    + idModule['NCTId'] + "</div><div class=\"REK\">" + REK + "</div></div><div class=\"eligibility\">" + Eligibility + "</div></div><hr>";
+    + participants + "</div><div class=\"studyType\" title=\"Type of the study.\">" + StudyType + "</div><div class=\"NCTId\" title=\"Identifier assigned by the registry.\">" 
+    + idModule['NCTId'] + "</div><div class=\"REK\" title=\"Ethics board approval number.\">" + REK + "</div></div><div class=\"eligibility\">" + Eligibility + "</div></div><hr>";
   }
   jQuery('#results').html(txt);
   jQuery('#results').removeClass('hide');
