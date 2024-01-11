@@ -108,6 +108,9 @@ d3.json(fname_fylker).then(function (mapData) {
   .attr('d', path)
   .attr('stroke-width', 1.5)
   .attr('type', 'fylkes')
+  .attr('fylkes-name', function(d) {
+    return d.properties.navn;
+  })
   //.attr('stroke-opacity', 0.1)
   .attr('vector-effect', 'non-scaling-stroke')
   .attr('pointer-events', 'none')
@@ -175,8 +178,8 @@ function sampleClick(name) {
 function moveMap(lat, lon) {
   k = k_zoomed;
   g.transition()
-    .duration(750)
-    .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')scale(' + k + ')translate(' + -x + ',' + -y + ')');
+  .duration(750)
+  .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')scale(' + k + ')translate(' + -x + ',' + -y + ')');
 }
 
 // When clicked, zoom in
@@ -189,7 +192,7 @@ function clicked(d) {
     x = centroid[0]-20;
     y = centroid[1];
     k = k_zoomed;
-    centered = d;
+    centered = d;    
   } else {
     x = width / 2;
     y = height / 2;
@@ -209,8 +212,8 @@ function clicked(d) {
   
   // Zoom
   g.transition()
-  .duration(750)
-  .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')scale(' + k + ')translate(' + -x + ',' + -y + ')');
+   .duration(750)
+   .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')scale(' + k + ')translate(' + -x + ',' + -y + ')');
   
   // Copy name to search field
   var name = d.properties.navn;
@@ -249,6 +252,10 @@ function mouseover(d) {
         //console.log("found a path");
         // set the color now
         jQuery(a).addClass('highlighted');
+        // we should add the name of the fylke to the .sub-title as well
+        var fylke_name = jQuery(a).attr('fylkes-name');
+        jQuery('.RegionName div.sub-title').text(fylke_name);
+        console.log("add region name: " + fylke_name)
       }
     });
   }
@@ -313,18 +320,22 @@ function pullDataFromSSB(number, callback) {
 }
 
 var timeoutID_SSB = "";
-function textArt(text, number, region) {
+function textArt(text, number, region, sub_text) {
   if (typeof region == "undefined") {
     // default to the RegionName
     region = "RegionName";
   }
   if (number == 301)
-  number = "0301"; // for Oslo only
+    number = "0301"; // for Oslo only
   
   // we should do the text in non-SVG
-  jQuery('.'+region+' div.title').text(text);
+  jQuery('.'+region+' div.title').html(text);
+  if (typeof sub_text != "undefined") {
+    jQuery('.'+region+' div.sub-title').html(sub_text);
+  }
   jQuery('.'+region+' div.description').addClass('hide');
   jQuery('.'+region+' div.source').addClass('hide');
+  jQuery('.'+region+' div.sub-title').addClass('hide');
   //jQuery('.RegionName div.description').html(""); // remove old text, wait for new text to arrive from SSB
   // query for the information from https://www.ssb.no/en/statbank/table/11342/tableViewLayout1/
   if (timeoutID_SSB != "") {
@@ -354,12 +365,16 @@ function textArt(text, number, region) {
       jQuery('.'+region+' div.description').html(txt);
       jQuery('.'+region+' div.description').removeClass('hide');
       jQuery('.'+region+' div.source').removeClass('hide');
+      jQuery('.'+region+' div.sub-title').removeClass('hide');
     });
   }, 500);
   
   return;
   
 }
+
+
+
 
 function search() {
   var searchTerm = jQuery('#inputSearch').val();
@@ -376,7 +391,7 @@ function search() {
   var under = data['FullStudiesResponse']["NStudiesFound"] + "/" + data['FullStudiesResponse']["NStudiesAvail"];
   // add some example click thingies
   for (var i = 0; i < places.length; i++)
-  under += "&nbsp;&nbsp;<button class='btn btn-sm btn-outline-primary py-0' style='font-size:0.8em;'>" + places[i] + "</button>";
+    under += "&nbsp;&nbsp;<button class='btn btn-sm btn-outline-primary py-0' style='font-size:0.8em;'>" + places[i] + "</button>";
   jQuery('#underneath').html(under);
   var studies = data['FullStudiesResponse']['FullStudies'];
   if (typeof studies == "undefined")
@@ -434,7 +449,7 @@ function search() {
     
     var idModule = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"];
     var REK = idModule['OrgStudyIdInfo']['OrgStudyId'];
-
+    
     txt += "<div class=\"result-row\"><div class=\"results-title\">" + idModule["BriefTitle"] + "</div></br><div class=\"results-organization\">" + idModule["Organization"]["OrgFullName"] + "</div><div class=\"results-reference\">" 
     + ref + "</div><div class=\"sponsor\">" + sponsor + "</div><div class=\"collaborator\">" 
     + collaborators + "</div><div class=\"labels\"><div class=\"numPart\" title=\"Number of participants the study accepts.\">" 
@@ -454,37 +469,37 @@ function setupMap(location, zoom) {
   if (typeof location === "string") {
     // do a geocoding lookup
     jQuery.getJSON("https://nominatim.openstreetmap.org/search", { q: location, format: "json"}, function(data) {
-      if (data.length == 0) {
-        // make map invisible again
-        jQuery('#leaf-map').fadeOut();
-        return;    
-      }
-      jQuery('#leaf-map').fadeIn();
-      setupMap([ data[0].lat, data[0].lon ], zoom);
-      //moveMap(data[0].lat, data[0].lon);
-    });
-    return;
-  }
+    if (data.length == 0) {
+      // make map invisible again
+      jQuery('#leaf-map').fadeOut();
+      return;    
+    }
+    jQuery('#leaf-map').fadeIn();
+    setupMap([ data[0].lat, data[0].lon ], zoom);
+    //moveMap(data[0].lat, data[0].lon);
+  });
+  return;
+}
 
-  if (map == null) {
-    // style = L.MaptilerStyle.DATAVIZ.LIGHT;
-    map = L.map('leaf-map', { zoomControl: false, attributionControl: false}).setView([location[0], location[1]], zoom);
-    //mtLayer = L.maptilerLayer({
-    //  apiKey: key,
-    //  style: L.MaptilerStyle.STREETS, // optional
-    //}).addTo(map);
-    //mtLayer.setStyle(style);
-    // more styles from: http://leaflet-extras.github.io/leaflet-providers/preview/
-    //var styledMap = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
-    //var styledMap = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-    var styledMap = "http://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web_grau/default/WEBMERCATOR/{z}/{y}/{x}.png";
-    L.tileLayer(styledMap, {
-      maxZoom: 19,
-      attribution: ''
-    }).addTo(map);
-  } else {
-    map.setView([location[0], location[1]], zoom);
-  }
+if (map == null) {
+  // style = L.MaptilerStyle.DATAVIZ.LIGHT;
+  map = L.map('leaf-map', { zoomControl: false, attributionControl: false}).setView([location[0], location[1]], zoom);
+  //mtLayer = L.maptilerLayer({
+  //  apiKey: key,
+  //  style: L.MaptilerStyle.STREETS, // optional
+  //}).addTo(map);
+  //mtLayer.setStyle(style);
+  // more styles from: http://leaflet-extras.github.io/leaflet-providers/preview/
+  //var styledMap = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
+  //var styledMap = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+  var styledMap = "http://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web_grau/default/WEBMERCATOR/{z}/{y}/{x}.png";
+  L.tileLayer(styledMap, {
+    maxZoom: 19,
+    attribution: ''
+  }).addTo(map);
+} else {
+  map.setView([location[0], location[1]], zoom);
+}
 }
 
 
@@ -522,7 +537,7 @@ jQuery(document).ready(function() {
     search(name);
     setupMap(name, 14);
   });
-
+  
   jQuery('#results').on('click', 'div.results-organization', function() {
     var txt = jQuery(this).text();
     jQuery('#inputSearch').val(txt);
@@ -531,7 +546,7 @@ jQuery(document).ready(function() {
     search(txt);
     setupMap(txt, 14);
   });
-
+  
   jQuery('#actions a').on('click', function(ev) {
     // download current query as csv
     var csvContent = "NCT-Id,title,sponsor,REK\n";
@@ -541,9 +556,9 @@ jQuery(document).ready(function() {
       var REK = jQuery(a).find('div.REK').text();
       var NCTId = jQuery(a).find('div.NCTId').text();
       csvContent += NCTId.replaceAll(",","") + "," +
-                  title.replaceAll(",", ";").replaceAll("\n","") + "," +
-                  sponsor.replace("sponsor: ", "").replaceAll(",", ";").replaceAll("\n","") + "," +
-                  REK.replaceAll(",","") + "\n";
+      title.replaceAll(",", ";").replaceAll("\n","") + "," +
+      sponsor.replace("sponsor: ", "").replaceAll(",", ";").replaceAll("\n","") + "," +
+      REK.replaceAll(",","") + "\n";
     }); 
     // var encodedUri = encodeURI(csvContent);
     const blob = new Blob([csvContent], { type: 'text/csv' }); 
@@ -553,12 +568,12 @@ jQuery(document).ready(function() {
     link.setAttribute("href", url);
     link.setAttribute("download", "map-of-norway-search-results.csv");
     document.body.appendChild(link); // Required for FF
-
+    
     link.click();
     document.body.removeChild(link);
     ev.preventDefault();
   });
-
+  
   // do something at the beginning
   jQuery('#inputSearch').val("");
   setTimeout(function() {
@@ -566,10 +581,10 @@ jQuery(document).ready(function() {
       setTimeout(function() { 
         jQuery('#inputSearch').val(jQuery('#inputSearch').val() + a);
         if (i == ar.length-1)
-          jQuery('#search-button').click();
+        jQuery('#search-button').click();
       }, i*100); 
     });
-
+    
     //jQuery('#inputSearch').val("Bergen");
     //jQuery('#search-button').click();
   }, 1000);
