@@ -395,7 +395,8 @@ function search() {
   jQuery('#underneath').html(under);
   var studies = data['FullStudiesResponse']['FullStudies'];
   if (typeof studies == "undefined")
-  return; // nothing else to do
+    return; // nothing else to do
+  var StdAges = {};
   var txt = "";
   for (var i = 0; i < studies.length; i++) {
     //var references = studies[i]["ReferencesModule"]["ReferenceList"]["Reference"];
@@ -446,11 +447,28 @@ function search() {
     if (typeof eligSection != "undefined") {
       Eligibility += eligSection.EligibilityCriteria;
     }
+
+    var eligStdAgeList = eligSection?.StdAgeList?.StdAge;
+    var stdAgeList_here = {};
+    if (typeof eligStdAgeList != "undefined") {
+      for (var j = 0; j < eligStdAgeList.length; j++) {
+        if (typeof StdAges[eligStdAgeList[j]] == "undefined") {
+          StdAges[eligStdAgeList[j]] = 1;
+        } else {
+          StdAges[eligStdAgeList[j]]++;
+        }
+        if (typeof stdAgeList_here[eligStdAgeList[j]] == "undefined") {
+          stdAgeList_here[eligStdAgeList[j]] = 1;
+        } else {
+          stdAgeList_here[eligStdAgeList[j]]++;
+        }
+      }
+    }
     
     var idModule = studies[i]["Study"]["ProtocolSection"]["IdentificationModule"];
     var REK = idModule['OrgStudyIdInfo']['OrgStudyId'];
     
-    txt += "<div class=\"result-row\"><div class=\"results-title\">" + idModule["BriefTitle"] + "</div></br><div class=\"results-organization\">" + idModule["Organization"]["OrgFullName"] + "</div><div class=\"results-reference\">" 
+    txt += "<div class=\"result-row\" std-ages='" + Object.keys(stdAgeList_here).join(";") + "'><div class=\"results-title\">" + idModule["BriefTitle"] + "</div></br><div class=\"results-organization\">" + idModule["Organization"]["OrgFullName"] + "</div><div class=\"results-reference\">" 
     + ref + "</div><div class=\"sponsor\">" + sponsor + "</div><div class=\"collaborator\">" 
     + collaborators + "</div><div class=\"labels\"><div class=\"numPart\" title=\"Number of participants the study accepts.\">" 
     + participants + "</div><div class=\"studyType\" title=\"Type of the study.\">" + StudyType + "</div><div class=\"NCTId\" title=\"Identifier assigned by the registry.\">" 
@@ -458,6 +476,13 @@ function search() {
   }
   jQuery('#results').html(txt);
   jQuery('#results').removeClass('hide');
+  // update the StdAges list on screen
+  var stdages_keys = Object.keys(StdAges);
+  jQuery('#results-std-ages').children().remove();
+  for (var i = 0; i < stdages_keys.length; i++) {
+    jQuery('#results-std-ages').append("<button class='btn btn-primary btn-sm py-0 stdage-button drag-item' draggable='true' data-bs-toggle='button'>" + stdages_keys[i] + "</button>");
+  }
+  makeButtonListDraggable();
   //console.log("result is: " + JSON.stringify(data));
 });
 }
@@ -500,6 +525,60 @@ if (map == null) {
 } else {
   map.setView([location[0], location[1]], zoom);
 }
+}
+
+  // we should make the button list dragabble so the order of elements can be changed
+function makeButtonListDraggable() {
+  const dragList = document.getElementById('results-std-ages');
+    let draggedItem = null;
+
+    // Add event listeners for drag and drop events
+    dragList.addEventListener('dragstart', handleDragStart);
+    dragList.addEventListener('dragover', handleDragOver);
+    dragList.addEventListener('drop', handleDrop);
+
+    // Drag start event handler
+    function handleDragStart(event) {
+      draggedItem = event.target;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/html', draggedItem.innerHTML);
+      event.target.style.opacity = '0.5';
+    }
+
+    // Drag over event handler
+    function handleDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      const targetItem = event.target;
+      if (targetItem !== draggedItem && targetItem.classList.contains('drag-item')) {
+        const boundingRect = targetItem.getBoundingClientRect();
+        const offset = boundingRect.x + (boundingRect.width / 2);
+        if (event.clientX - offset > 0) {
+          targetItem.style.borderRight = 'solid 2px #000';
+          targetItem.style.borderLeft = '';
+        } else {
+          targetItem.style.borderRight = 'solid 2px #000';
+          targetItem.style.borderLeft = '';
+        }
+      }
+    }
+
+    // Drop event handler
+    function handleDrop(event) {
+      event.preventDefault();
+      const targetItem = event.target;
+      if (targetItem !== draggedItem && targetItem.classList.contains('drag-item')) {
+        if (event.clientX > targetItem.getBoundingClientRect().left + (targetItem.offsetWidth / 2)) {
+          targetItem.parentNode.insertBefore(draggedItem, targetItem.nextSibling);
+        } else {
+          targetItem.parentNode.insertBefore(draggedItem, targetItem);
+        }
+      }
+      targetItem.style.borderRight = '';
+      targetItem.style.borderLeft = '';
+      draggedItem.style.opacity = '';
+      draggedItem = null;
+    }
 }
 
 
@@ -588,4 +667,33 @@ jQuery(document).ready(function() {
     //jQuery('#inputSearch').val("Bergen");
     //jQuery('#search-button').click();
   }, 1000);
+
+
+
+  jQuery('#actions').on('click', 'button.stdage-button', function() {
+    // what are the active standard ages?
+    active_ages_list = jQuery('#actions button.stdage-button.active').map(function(i, a) { return jQuery(a).text(); });
+    // if we have no active button, show all
+    if (active_ages_list.length == 0) {
+      jQuery('div.result-row').each(function(i, row) {
+        jQuery(this).removeClass('disabled-entry');
+      });
+      return;
+    }
+
+    // we can go through the list of active buttons to compute the logic we need
+    jQuery('div.result-row').each(function(i, row) {
+      var ages_elig = jQuery(this).attr('std-ages').split(";");
+      var matches = ages_elig.map(function(a) { 
+        if (active_ages_list.toArray().indexOf(a) > -1) 
+          return true; 
+        return false; 
+      }).reduce(function(a, b) { return a || b; }, false);
+      if (matches) {
+        jQuery(this).removeClass('disabled-entry');
+      } else {
+        jQuery(this).addClass('disabled-entry');
+      }
+    });
+  });
 });
