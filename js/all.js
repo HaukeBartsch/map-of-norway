@@ -628,16 +628,17 @@ jQuery(document).ready(function() {
   
   jQuery('#actions a').on('click', function(ev) {
     // download current query as csv
-    var csvContent = "NCT-Id,title,sponsor,REK\n";
+    var csvContent = "NCT-Id,title,sponsor,REK,eligible\n";
     jQuery('#results div.result-row').each(function(i, a) {
       var title = jQuery(a).find('div.results-title').text();
       var sponsor = jQuery(a).find('div.sponsor').text();
       var REK = jQuery(a).find('div.REK').text();
       var NCTId = jQuery(a).find('div.NCTId').text();
+      var eligible = jQuery(a).attr('std-ages');
       csvContent += NCTId.replaceAll(",","") + "," +
       title.replaceAll(",", ";").replaceAll("\n","") + "," +
       sponsor.replace("sponsor: ", "").replaceAll(",", ";").replaceAll("\n","") + "," +
-      REK.replaceAll(",","") + "\n";
+      REK.replaceAll(",","") + "," + eligible.replaceAll(",","") + "\n";
     }); 
     // var encodedUri = encodeURI(csvContent);
     const blob = new Blob([csvContent], { type: 'text/csv' }); 
