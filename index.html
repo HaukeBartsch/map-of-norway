@@ -119,7 +119,7 @@
     transition: opacity .5s linear;
   }
   div.results {
-    margin-top: 30px;
+    margin-top: 0px;
     min-height: 100px;
     max-height: 600px;
     background-color: rgba(250,250,250,0.7);
@@ -202,7 +202,6 @@
     position: relative;
     margin-top: 4px;
     font-size: 10px;
-    margin-bottom: -15px;
     color: gray;
   }
 
@@ -215,6 +214,7 @@
     font-size: 8pt;
     color: lightgray;
     width: 100%;
+    margin-top: 30px;
   }
   .actions a {
     color: gray;
@@ -279,14 +279,14 @@
   <div class="container-fluid" style="z-index: 1; margin-top: 130px;" style="pointer-events: none;">
     <div class="row"  style="pointer-events: none;">
       <div class="col-md-8 col-sm-12 col-lg-6" style="pointer-events: auto;">
+        <div id="underneath" class="tiny"></div>
         <div class="input-group">
           <input type="text" class="form-control" id="inputSearch" aria-describedby="searchHelp" placeholder="">
           <button class="btn btn-secondary" id="search-button" type="button">search</button>
 <!--      <small id="searchHelp" class="form-text text-muted">&nbsp;&nbsp;I'm feeling <a href="">lucky</a>.</small> -->
         </div>
-        <div id="underneath" class="tiny"></div>
-        <div id="results" class="results"></div>
         <div id="actions" class="actions"><a href="#">export as spreadsheet</a><div id='results-std-ages'></div></div>
+        <div id="results" class="results"></div>
       </div>
       <div class="col-md-4 col-sm-0 col-lg-6" style="pointer-events: none;">
         &nbsp;
