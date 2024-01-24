@@ -272,10 +272,32 @@
     height: 50px;
     overflow-y: hidden;
   }
+
+  div.title-title {
+    position: absolute; 
+    left: 20px; 
+    top: 10px; 
+    font-size: 5em; 
+    font-weight: 400; 
+    color: gray; 
+    font-family: \"Times New Roman\", Times, serif; 
+    white-space: nowrap;
+  }
+
+  @media only screen and (max-width: 1026px) {
+    #leaf-map {
+        display: none;
+    }
+    div.RegionNames {
+      display: none;
+    }
+  }
 </style>
 
 <body   style="pointer-events: none;">
-  <div style="position: absolute; left: 20px; top: 10px; font-size: 5em; font-weight: 400; color: gray; font-family: \"Times New Roman\", Times, serif;">Clinical Trials .gov</div>
+  <div class="title-title">
+    Clinical Trials .gov
+  </div>
   <div class="container-fluid" style="z-index: 1; margin-top: 130px;" style="pointer-events: none;">
     <div class="row"  style="pointer-events: none;">
       <div class="col-md-8 col-sm-12 col-lg-6" style="pointer-events: auto;">

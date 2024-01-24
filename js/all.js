@@ -630,6 +630,9 @@ jQuery(document).ready(function() {
     // download current query as csv
     var csvContent = "NCT-Id,title,sponsor,REK,eligible\n";
     jQuery('#results div.result-row').each(function(i, a) {
+      if (jQuery(this).hasClass('disabled-entry'))
+        return; // only export selected entries
+
       var title = jQuery(a).find('div.results-title').text();
       var sponsor = jQuery(a).find('div.sponsor').text();
       var REK = jQuery(a).find('div.REK').text();
