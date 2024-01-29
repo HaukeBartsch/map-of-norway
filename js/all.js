@@ -406,16 +406,20 @@ function search() {
     //}
     
     var sponsor = "";
+    var responsibleInvestigator = "";
     // in case we have a sponsor module
     var sponsorSection = studies[i]?.Study?.ProtocolSection?.SponsorCollaboratorsModule;
     if (typeof sponsorSection != "undefined" ) {
       // create a sponsor section
       sponsor += "sponsor: " + sponsorSection.LeadSponsor.LeadSponsorName;
-      var investigator = sponsorSection?.ResponsibleParty?.ResponsiblePartyInvestigatorFullName;
-      if (typeof investigator != 'undefined') {
-        sponsor += ", " + investigator;
+      responsibleInvestigator = sponsorSection?.ResponsibleParty?.ResponsiblePartyInvestigatorFullName;
+      if (typeof responsibleInvestigator != 'undefined') {
+        sponsor += ", " + responsibleInvestigator;
       }
     }
+    if (typeof responsibleInvestigator == "undefined")
+      responsibleInvestigator = "";
+
     var collaborators = "";
     var collSection = sponsorSection?.CollaboratorList;
     if (typeof collSection != "undefined") {
@@ -469,7 +473,7 @@ function search() {
     var REK = idModule['OrgStudyIdInfo']['OrgStudyId'];
     
     txt += "<div class=\"result-row\" std-ages='" + Object.keys(stdAgeList_here).join(";") + "'><div class=\"results-title\">" + idModule["BriefTitle"] + "</div></br><div class=\"results-organization\">" + idModule["Organization"]["OrgFullName"] + "</div><div class=\"results-reference\">" 
-    + ref + "</div><div class=\"sponsor\">" + sponsor + "</div><div class=\"collaborator\">" 
+    + ref + "</div><div class=\"sponsor\" investigator=\""+ responsibleInvestigator +"\">" + sponsor + "</div><div class=\"collaborator\">" 
     + collaborators + "</div><div class=\"labels\"><div class=\"numPart\" title=\"Number of participants the study accepts.\">" 
     + participants + "</div><div class=\"studyType\" title=\"Type of the study.\">" + StudyType + "</div><div class=\"NCTId\" title=\"Identifier assigned by the registry.\">" 
     + idModule['NCTId'] + "</div><div class=\"REK\" title=\"Ethics board approval number.\">" + REK + "</div></div><div class=\"eligibility\">" + Eligibility + "</div></div><hr>";
@@ -628,19 +632,21 @@ jQuery(document).ready(function() {
   
   jQuery('#actions a').on('click', function(ev) {
     // download current query as csv
-    var csvContent = "NCT-Id,title,sponsor,REK,eligible\n";
+    var csvContent = "NCT-Id,title,sponsor,investigator,REK,eligible\n";
     jQuery('#results div.result-row').each(function(i, a) {
       if (jQuery(this).hasClass('disabled-entry'))
         return; // only export selected entries
 
       var title = jQuery(a).find('div.results-title').text();
       var sponsor = jQuery(a).find('div.sponsor').text();
+      var investigator = jQuery(a).find('div.sponsor').attr('investigator');
       var REK = jQuery(a).find('div.REK').text();
       var NCTId = jQuery(a).find('div.NCTId').text();
       var eligible = jQuery(a).attr('std-ages');
       csvContent += NCTId.replaceAll(",","") + "," +
       title.replaceAll(",", ";").replaceAll("\n","") + "," +
       sponsor.replace("sponsor: ", "").replaceAll(",", ";").replaceAll("\n","") + "," +
+      investigator + "," +
       REK.replaceAll(",","") + "," + eligible.replaceAll(",","") + "\n";
     }); 
     // var encodedUri = encodeURI(csvContent);
