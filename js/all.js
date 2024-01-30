@@ -44,6 +44,19 @@ var width = window.innerWidth, // 1200,
 height = window.innerHeight, // 1000,
 centered;
 
+jQuery(window).resize(function() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  projection = d3.geoMercator()
+    .scale(init_zoom)
+    // Center the Map in Norway 63°59′26″N 12°18′28″E
+    .center(center_coord)
+    .translate([width / 2, height / 2]);
+  d3.select('svg').attr('width', width)
+  .attr('height', height);
+});
+
+
 // Define color scale
 /*   var color = d3.scale.linear()
 .domain([1, 20])
@@ -62,10 +75,10 @@ var path = d3.geoPath()
 
 // Set svg width & height
 var svg = d3.select('svg')
-.attr("preserveAspectRatio", "xMinYMin meet")
-.classed("svg-content-responsive", true)
-.attr('width', width)
-.attr('height', height);
+//.attr("preserveAspectRatio", "xMinYMin meet")
+//.classed("svg-content-responsive", true)
+.attr('width', function() { return window.innerWidth; })
+.attr('height', function() { return window.innerHeight; });
 
 // Add background
 svg.append('rect')
