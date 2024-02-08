@@ -509,14 +509,14 @@ var map = null;
 function setupMap(location, zoom) {
   // return;
   if (typeof location === "string") {
-    // do a geocoding lookup
+    // do a geocoding lookup - TODO: do this only if we are actually displaying the leaf-map
     jQuery.getJSON("https://nominatim.openstreetmap.org/search", { q: location, format: "json"}, function(data) {
     if (data.length == 0) {
       // make map invisible again
-      jQuery('#leaf-map').fadeOut();
+      //jQuery('#leaf-map').fadeOut();
       return;    
     }
-    jQuery('#leaf-map').fadeIn();
+    //jQuery('#leaf-map').fadeIn();
     setupMap([ data[0].lat, data[0].lon ], zoom);
     //moveMap(data[0].lat, data[0].lon);
   });
